@@ -171,16 +171,16 @@ contract Crowdsale  {
     uint256 public icoStartTime;
     uint256 public a = 1;
     uint256 public icoEndTime;
-    uint256 public tokenRate;
+  //  uint256 public tokenRate;
     uint256 public PriceOfETHinUSD;
     IERC20 public token;
     uint256 public fundingGoal;
     address public owner;
     uint256 public tokensRaised;
-    uint256 public rateOne = PriceOfETHinUSD.div(1e8).div(a.div(100));
-    uint256 public rateTwo = PriceOfETHinUSD.div(1e8).div(a.div(50));
-    uint256 public limitTierOne = 30e6 * (10 ** token.decimals());
-    uint256 public limitTierTwo = 50e6 * (10 ** token.decimals());
+    // uint256 public rateOne = PriceOfETHinUSD.div(1e8).mul(100);
+    // uint256 public rateTwo = PriceOfETHinUSD.div(1e8).mul(50);
+    // uint256 public limitTierOne;
+    // uint256 public limitTierTwo;
 
     modifier whenIcoCompleted {
         require(icoCompleted);
@@ -196,25 +196,25 @@ contract Crowdsale  {
         buy();
     }
 
-    constructor(uint256 _icoStart, uint256 _icoEnd, uint256 _tokenRate, address _tokenAddress, uint256 _fundingGoal) public {
+    constructor(uint256 _icoStart, uint256 _icoEnd, /*uint256 _tokenRate,*/ address _tokenAddress, uint256 _fundingGoal) public {
         require(_icoStart != 0 &&
             _icoEnd != 0 &&
             _icoStart < _icoEnd &&
-            _tokenRate != 0 &&
+           // _tokenRate != 0 &&
             _tokenAddress != address(0) &&
             _fundingGoal != 0);
 
         priceFeed = AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
         icoStartTime = _icoStart;
         icoEndTime = _icoEnd;
-        tokenRate = _tokenRate;
+     //   tokenRate = _tokenRate;
         token = IERC20(_tokenAddress);
         fundingGoal = _fundingGoal;
         owner = msg.sender;
     }
 
 
-     function getLatestPrice() public payable returns (uint256) {
+     function getLatestPrice() public returns (uint256) {
         (
             uint80 roundID, 
             int price,
@@ -224,6 +224,22 @@ contract Crowdsale  {
         ) = priceFeed.latestRoundData();
         PriceOfETHinUSD = uint(price);
         return PriceOfETHinUSD;
+    }
+
+    function limitTierOne() public view returns(uint256) {
+        return 30e6 * (10 ** token.decimals());
+    }
+
+    function limitTierTwo() public view returns(uint256) {
+        return 50e6 * (10 ** token.decimals());
+    }
+
+    function rateOne() public view returns(uint256) {
+        return PriceOfETHinUSD.div(1e8).mul(100);
+    }
+
+    function rateTwo() public view returns(uint256) {
+        return PriceOfETHinUSD.div(1e8).mul(50);
     }
 
     
@@ -260,9 +276,9 @@ contract Crowdsale  {
         require(tierSelected >= 1 && tierSelected <= 2);
 
         if(tierSelected == 1)
-            calculatedTokens = weiPaid.mul(rateOne);
+            calculatedTokens = weiPaid.mul(rateOne());
         else if(tierSelected == 2)
-            calculatedTokens = weiPaid.mul(rateTwo);
+            calculatedTokens = weiPaid.mul(rateTwo());
    }
 
     function buy() public payable {
@@ -273,21 +289,21 @@ contract Crowdsale  {
     	uint256 etherUsed = msg.value;
 
     	// If the tokens raised are less than 25 million with decimals, apply the first rate
-    	if(tokensRaised < limitTierOne) {
+    	if(tokensRaised < limitTierOne()) {
     	    // Tier 1
-    		tokensToBuy = etherUsed * (10 ** token.decimals()) / 1 ether * rateOne;
+    		tokensToBuy = etherUsed * (10 ** token.decimals()) / 1 ether * rateOne();
 
     		// If the amount of tokens that you want to buy gets out of this tier
-    		if(tokensRaised + tokensToBuy > limitTierOne) {
-    			tokensToBuy = calculateExcessTokens(etherUsed, limitTierOne, 1, rateOne);
+    		if(tokensRaised + tokensToBuy > limitTierOne()) {
+    			tokensToBuy = calculateExcessTokens(etherUsed, limitTierOne(), 1, rateOne());
     		}
-    	} else if(tokensRaised >= limitTierOne && tokensRaised < limitTierTwo) {
+    	} else if(tokensRaised >= limitTierOne() && tokensRaised < limitTierTwo()) {
     	    // Tier 2
-            tokensToBuy = etherUsed * (10 ** token.decimals()) / 1 ether * rateTwo;
+            tokensToBuy = etherUsed * (10 ** token.decimals()) / 1 ether * rateTwo();
 
             // If the amount of tokens that you want to buy gets out of this tier
-       		if(tokensRaised + tokensToBuy > limitTierTwo) {
-    			tokensToBuy = calculateExcessTokens(etherUsed, limitTierTwo, 2, rateTwo);
+       		if(tokensRaised + tokensToBuy > limitTierTwo()) {
+    			tokensToBuy = calculateExcessTokens(etherUsed, limitTierTwo(), 2, rateTwo());
     		}
 
 
