@@ -169,18 +169,12 @@ contract Crowdsale  {
 
     bool public icoCompleted;
     uint256 public icoStartTime;
-    uint256 public a = 1;
     uint256 public icoEndTime;
-  //  uint256 public tokenRate;
     uint256 public PriceOfETHinUSD;
     IERC20 public token;
     uint256 public fundingGoal;
     address public owner;
     uint256 public tokensRaised;
-    // uint256 public rateOne = PriceOfETHinUSD.div(1e8).mul(100);
-    // uint256 public rateTwo = PriceOfETHinUSD.div(1e8).mul(50);
-    // uint256 public limitTierOne;
-    // uint256 public limitTierTwo;
 
     modifier whenIcoCompleted {
         require(icoCompleted);
@@ -196,18 +190,16 @@ contract Crowdsale  {
         buy();
     }
 
-    constructor(uint256 _icoStart, uint256 _icoEnd, /*uint256 _tokenRate,*/ address _tokenAddress, uint256 _fundingGoal) public {
+    constructor(uint256 _icoStart, uint256 _icoEnd, address _tokenAddress, uint256 _fundingGoal) public {
         require(_icoStart != 0 &&
             _icoEnd != 0 &&
             _icoStart < _icoEnd &&
-           // _tokenRate != 0 &&
             _tokenAddress != address(0) &&
             _fundingGoal != 0);
 
         priceFeed = AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
         icoStartTime = _icoStart;
         icoEndTime = _icoEnd;
-     //   tokenRate = _tokenRate;
         token = IERC20(_tokenAddress);
         fundingGoal = _fundingGoal;
         owner = msg.sender;
@@ -306,12 +298,16 @@ contract Crowdsale  {
     			tokensToBuy = calculateExcessTokens(etherUsed, limitTierTwo(), 2, rateTwo());
     		}
 
-
     	// Send the tokens to the buyer
     	token.buyTokens(msg.sender, tokensToBuy);
 
     	// Increase the tokens raised and ether raised state variables
     	tokensRaised += tokensToBuy;
+    }  
     }
-}
+
+    function extractEther() public whenIcoCompleted onlyOwner {
+        payable(owner).transfer(address(this).balance);
+    }
+
 }
